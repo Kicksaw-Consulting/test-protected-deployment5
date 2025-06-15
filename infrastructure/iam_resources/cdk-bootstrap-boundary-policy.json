@@ -2,7 +2,7 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "AllowReadingCDKBootstrapVersionParameter",
+      "Sid": "AllowReadingCDKBootstrapVersionParameter!",
       "Effect": "Allow",
       "Action": ["ssm:GetParameters", "ssm:GetParameter"],
       "Resource": "arn:aws:ssm:us-west-2:123456789012:parameter/cdk-bootstrap/61c44a6a3/version"

@@ -22,7 +22,8 @@ jobs:
     steps:
       - id: set_env
         run: |
-          BRANCH=${{ GITHUB_HEAD_REF:-${GITHUB_REF##*/} }}
+
+          BRANCH="${{ GITHUB_HEAD_REF:-${GITHUB_REF##*/} }}"
           if [[ "$BRANCH" == "development" ]]; then
             echo "env_name=development" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" == "staging" ]]; then
