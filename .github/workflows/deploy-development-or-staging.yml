@@ -1,0 +1,231 @@
+name: Deploy to development or staging!
+
+on:
+  push:
+    branches: [development, staging]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      env_name: ${{ steps.set_env.outputs.env_name }}
+    steps:
+      - id: set_env
+        run: |
+          BRANCH=${{ GITHUB_HEAD_REF:-${GITHUB_REF##*/} }}
+          if [[ "$BRANCH" == "development" ]]; then
+            echo "env_name=development" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == "staging" ]]; then
+            echo "env_name=staging" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=unknown" >> $GITHUB_OUTPUT
+          fi
+
+  changes-check:
+    name: Check file changes
+    runs-on: ubuntu-latest
+    needs: [test, prepare]
+    outputs:
+      boundary_changed: ${{ steps.check.outputs.boundary_changed }}
+      deploy_changed: ${{ steps.check.outputs.deploy_changed }}
+      policy_changed: ${{ steps.check.outputs.policy_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+
+      - id: check
+        run: |
+          if [ -z ${{ github.event.before }} ]; then
+            git fetch origin main:main
+            CHANGED_FILES=$(git diff --name-only origin/main...${{ github.sha }})
+          else
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          fi
+
+          POLICY_BOUNDARY="infrastructure/iam_resources/cdk-bootstrap-boundary-policy.json"
+          POLICY_DEPLOY="infrastructure/iam_resources/cdk-deployment-policy.json"
+
+          echo "boundary_changed=$(echo "$CHANGED_FILES" | grep -qx "$POLICY_BOUNDARY" && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "deploy_changed=$(echo "$CHANGED_FILES" | grep -qx "$POLICY_DEPLOY" && echo true || echo false)" >> $GITHUB_OUTPUT
+
+          policy_changed=false
+          for file in $CHANGED_FILES; do
+            if [[ "$file" != "$POLICY_BOUNDARY" && "$file" != "$POLICY_DEPLOY" && "$file" == infrastructure/iam_resources/* ]]; then
+              policy_changed=true
+              break
+            fi
+          done
+          echo "policy_changed=$policy_changed" >> $GITHUB_OUTPUT
+
+  permission-boundary-update:
+    name: Update IAM Policy Boundary
+    needs: changes-check
+    if: needs.changes-check.outputs.boundary_changed == 'true'
+    uses: Kicksaw-Consulting/salesforce-integration/.github/workflows/secure-policy-update.yml@secure
+    with:
+      policy_file_path: infrastructure/iam_resources/cdk-bootstrap-boundary-policy.json
+      policy_name: "salesforce-integration-cdk-bootstrap-boundary-policy"
+      assume_role: "salesforce-integration-deployment-role"
+
+  permission-boundary-sync:
+    name: Sync Permission Boundary
+    runs-on: ubuntu-latest
+    needs: [permission-boundary-update]
+    if: needs.changes-check.outputs.boundary_changed == 'true'
+    steps:
+      - name: Log boundary update complete
+        run: echo "Boundary update completed"
+
+  BootStrap:
+    name: Bootstrap CDK
+    runs-on: ubuntu-latest
+    needs:
+      - permission-boundary-sync
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      POLICY_NAME: "salesforce-integration-cdk-bootstrap-boundary-policy"
+      ENVIRONMENT: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          poetry self add poetry-plugin-export
+          poetry install
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/salesforce-integration-deployment-role
+
+      - name: Check if CDK is already bootstrapped
+        id: check_bootstrap
+        if: always()
+        run: |
+          STACK_NAME="salesforce-integration-9e4b832cf-cdk-toolkit"
+          if aws cloudformation describe-stacks --stack-name "$STACK_NAME" >/dev/null 2>&1; then
+            echo "already_bootstrapped=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_bootstrapped=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bootstrap CDK
+        if: ${{ steps.check_bootstrap.outputs.already_bootstrapped == &#39;false&#39; }}
+        run: |
+          cdk bootstrap aws://${{ env.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }} \
+            --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+            --bootstrap-permissions-boundary arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:policy/${{ env.POLICY_NAME }} \
+            --qualifier 9e4b832cf \
+            --toolkit-stack-name salesforce-integration-${{ needs.prepare.outputs.env_name }}-cdk-toolkit
+
+  Deploy-policy-update:
+    name: Update IAM deploy Policy
+    needs: [BootStrap , changes-check]
+    if: always() && needs.changes-check.outputs.deploy_changed == 'true'
+    uses: Kicksaw-Consulting/salesforce-integration/.github/workflows/secure-policy-update.yml@secure
+    with:
+      policy_file_path: infrastructure/iam_resources/cdk-deployment-policy.json
+      policy_name: "salesforce-integration-cdk-deployment-policy"
+      assume_role: "salesforce-integration-deployment-role"
+
+  Deploy-policy-sync:
+    name: Sync Deploy Policy Update
+    runs-on: ubuntu-latest
+    needs: [Deploy-policy-update]
+    steps:
+      - name: Log deploy policy update complete
+        run: echo "Deploy policy update completed"
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs:
+      - permission-boundary-sync
+      - BootStrap
+      - Deploy-policy-sync
+    if: always()
+    environment:
+      name: ${{ github.ref_name }}
+    env:
+      SENTRY_DSN: "null"
+      ENVIRONMENT: ${{ github.ref_name }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Cache poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          key: poetry-${{ hashFiles('poetry.lock') }}
+          path: |
+            ~/.local/bin/poetry
+            ~/.local/share/pypoetry
+            ~/.cache/pypoetry
+      - name: Install poetry
+        if: ${{ steps.cache-poetry.outputs.cache-hit != &#39;true&#39; }}
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install poetry export plugin
+        run: poetry self add poetry-plugin-export
+      - name: Install project and its dependencies
+        run: |
+          export PATH="~/.local/share/pypoetry/bin:$PATH"
+          poetry install
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/salesforce-integration-deployment-role
+      - name: Deploy
+        run: scripts/deploy.sh
+      - name: Run post-deployment script
+        run: poetry run python scripts/deployment/post_deploy.py

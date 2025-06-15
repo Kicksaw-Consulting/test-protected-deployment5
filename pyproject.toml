@@ -1,0 +1,137 @@
+[tool.poetry]
+name = "salesforce-integration"
+version = "0.0.1"
+description = "Salesforce Integration for Kicksaw by Kicksaw"
+license = "Proprietary"
+authors = ["Kicksaw Engineering <engineering@kicksaw.com>"]
+readme = "README.md"
+packages = [
+    { include = "integration" },
+    { include = "handlers" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+httpx = "^0.27.0"
+cachetools = "^5.3.0"
+# Data validation and serialization
+orjson = "^3.10.0"
+pydantic = { extras = ["email"], version = "^2.7.0" }
+pydantic-settings = "^2.2.0"
+# Date and time handling
+pytz = "^2024.1"
+python-dateutil = "^2.9.0"
+# Telemetry
+aws-xray-sdk = "^2.13.0"
+sentry-sdk = { extras = ["httpx"], version = "^2.1.0" }
+
+[tool.poetry.group.development.dependencies]
+aws-cdk-lib = "^2.140.0"
+constructs = "^10.3.0"
+# boto3 is included in the AWS Lambda runtime by default
+# (these are the same versions as in the AWS Lambda runtime)
+# https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages.html
+boto3 = "==1.33.6"
+botocore = "==1.33.6"
+pre-commit = "^3.7.0"
+typer = { extras = ["all"], version = "^0.12.0" }
+poetry-plugin-export = "^1.7.0"
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.4.3"
+mypy = "^1.10.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.2.0"
+pytest-cov = "^5.0.0"
+respx = "^0.21.0"
+moto = { extras = ["all"], version = "^5.0.0" }
+
+[tool.poetry.group.typing.dependencies]
+boto3-stubs = { extras = ["essential"], version = "==1.33.6" }
+types-cachetools = "^5.3.0"
+types-pytz = "^2024.1"
+types-python-dateutil = "^2.9.0"
+types-aws-xray-sdk = "^2.13.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Development tool configuration
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules
+select = [
+    # Pyflakes
+    "F",
+    # pycodestyle
+    "E",
+    # pep8-naming
+    "N",
+    # flake8-bandit
+    "S",
+    # flake8-comprehensions
+    "C4",
+    # flake8-logging-format
+    "G",
+    # flake8-print
+    "T20",
+    # flake8-use-pathlib
+    "PTH",
+    # Pylint
+    "PL",
+    # Ruff-specific rules
+    "RUF",
+]
+ignore = [
+    # Bandit: assert statement
+    "S101",
+    # `subprocess` call: check for execution of untrusted input
+    "S603", "S607",
+    # `open()` should be replaced by `Path.open()`
+    "PTH123",
+    # Magic value used in comparison
+    "PLR2004",
+    # Too many branches
+    "PLR0912",
+    # Too many arguments
+    "PLR0913",
+    # Too many statements
+    "PLR0915",
+    # Mutable class attributes should be annotated with `typing.ClassVar`
+    "RUF012",
+    # line too long
+    "E501",
+]
+
+[tool.ruff.lint.isort]
+lines-between-types = 1
+
+[tool.pytest.ini_options]
+addopts = "-v --cov=. --cov-report=term --cov-report=xml --cov-report=html"
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    'pragma: no cover',
+    'raise AssertionError',
+    'raise NotImplementedError',
+    'if __name__ == .__main__.:',
+    'def __str__',
+    'def __repr__',
+    'if TYPE_CHECKING:',
+]
+omit = [
+    "handlers/asgi_handler.py",
+    "infrastructure/*",
+    "app.py",
+    "integration/main.py",
+    "integration/config/*",
+    "tests/*",
+]
+precision = 1
+skip_empty = true
+sort = "-Cover"

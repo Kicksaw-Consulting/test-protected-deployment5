@@ -1,0 +1,64 @@
+name: Teardown deployment from feature branch
+
+on:
+  pull_request:
+    branches:
+      - "development"
+    types:
+      - closed
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  teardown:
+    name: Teardown deployment from ${{ github.head_ref }}
+    runs-on: ubuntu-latest
+    env:
+      ENVIRONMENT: ${{ github.base_ref }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Cache poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          key: poetry-${{ hashFiles('poetry.lock') }}
+          path: |
+            ~/.local/bin/poetry
+            ~/.local/share/pypoetry
+            ~/.cache/pypoetry
+      - name: Install poetry
+        if: ${{ steps.cache-poetry.outputs.cache-hit != 'true' }}
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install project and its dependencies
+        run: |
+          export PATH="~/.local/share/pypoetry/bin:$PATH"
+          poetry install
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Cache node dependencies
+        uses: actions/cache@v4
+        with:
+          key: node-${{ hashFiles('package-lock.json') }}
+          path: ./node_modules
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/salesforce-integration-deployment-role
+      - name: Teardown the AWS Cloud Formation stack
+        run: |
+          export AWS_RESOURCE_SUFFIX=$(echo "${{ github.head_ref }}" | tr / - | tr _ -)
+          cdk destroy --require-approval never --force --all

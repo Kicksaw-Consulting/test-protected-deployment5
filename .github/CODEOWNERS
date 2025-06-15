@@ -1,0 +1,4 @@
+# Protect all workflow files (any change here will require your approval)
+.github/workflows/ @Kicksaw-Consulting/engineering
+.github/CODEOWNERS @Kicksaw-Consulting/engineering
+ 

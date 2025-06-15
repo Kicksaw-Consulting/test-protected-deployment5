@@ -1,0 +1,173 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowReadingCDKBootstrapVersionParameter",
+      "Effect": "Allow",
+      "Action": ["ssm:GetParameters", "ssm:GetParameter"],
+      "Resource": "arn:aws:ssm:us-west-2:123456789012:parameter/cdk-bootstrap/61c44a6a3/version"
+    },
+    {
+      "Sid": "AllowReadingFilesFromCDKBootstrapBucket",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::cdk-61c44a6a3-assets-123456789012-us-west-2/*"
+    },
+    {
+      "Sid": "DenyAccessIfRequiredPermBoundaryIsNotBeingApplied",
+      "Effect": "Deny",
+      "Action": [
+        "iam:CreateRole",
+        "iam:CreateUser",
+        "iam:PutRolePermissionsBoundary",
+        "iam:PutUserPermissionsBoundary"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "iam:PermissionsBoundary": "arn:aws:iam::123456789012:policy/salesforce-integration-cdk-bootstrap-boundary-policy"
+        }
+      }
+    },
+    {
+      "Sid": "DenyPermBoundaryIAMPolicyAlteration",
+      "Effect": "Deny",
+      "Action": [
+        "iam:CreatePolicyVersion",
+        "iam:DeletePolicy",
+        "iam:DeletePolicyVersion",
+        "iam:SetDefaultPolicyVersion"
+      ],
+      "Resource": "arn:aws:iam::123456789012:policy/salesforce-integration-cdk-bootstrap-boundary-policy"
+    },
+    {
+      "Sid": "DenyRemovalOfPermBoundaryFromAnyUserOrRole",
+      "Effect": "Deny",
+      "Action": [
+        "iam:DeleteUserPermissionsBoundary",
+        "iam:DeleteRolePermissionsBoundary"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationIAMPolicies",
+      "Effect": "Allow",
+      "Action": ["iam:*"],
+      "Resource": "arn:aws:iam::123456789012:policy/salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationIAMRoles",
+      "Effect": "Allow",
+      "Action": ["iam:*"],
+      "Resource": "arn:aws:iam::123456789012:role/salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationSecrets",
+      "Effect": "Allow",
+      "Action": ["secretsmanager:*"],
+      "Resource": "arn:aws:secretsmanager:us-west-2:123456789012:secret:salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowGenerationOfRandomPassword",
+      "Effect": "Allow",
+      "Action": ["secretsmanager:GetRandomPassword"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationS3Buckets",
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Resource": "arn:aws:s3:::salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationSQSQueues",
+      "Effect": "Allow",
+      "Action": ["sqs:*"],
+      "Resource": "arn:aws:sqs:us-west-2:123456789012:salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationLambdaFunctions",
+      "Effect": "Allow",
+      "Action": ["lambda:*"],
+      "Resource": "arn:aws:lambda:us-west-2:123456789012:function:salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationLambdaLayers",
+      "Effect": "Allow",
+      "Action": ["lambda:*"],
+      "Resource": "arn:aws:lambda:us-west-2:123456789012:layer:salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationLambdaFunctionEventSourceMappings",
+      "Effect": "Allow",
+      "Action": ["lambda:*EventSourceMapping"],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "lambda:FunctionArn": "arn:aws:lambda:us-west-2:123456789012:function:salesforce-integration-*"
+        }
+      }
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationCloudWatchLogs",
+      "Effect": "Allow",
+      "Action": ["logs:*"],
+      "Resource": "arn:aws:logs:us-west-2:123456789012:log-group:/aws/lambda/salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowDescribingLogGroups",
+      "Effect": "Allow",
+      "Action": ["logs:DescribeLogGroups"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationEventRules",
+      "Effect": "Allow",
+      "Action": ["events:*"],
+      "Resource": "arn:aws:events:us-west-2:123456789012:rule/salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowWritingToCloudWatchMetrics",
+      "Effect": "Allow",
+      "Action": ["cloudwatch:PutMetricData"],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "cloudwatch:namespace": "salesforce-integration"
+        }
+      }
+    },
+    {
+      "Sid": "AllowAnyOperationsWithApplicationCloudWatchDashboards",
+      "Effect": "Allow",
+      "Action": ["cloudwatch:*"],
+      "Resource": "arn:aws:cloudwatch::123456789012:dashboard/salesforce-integration-*"
+    },
+    {
+      "Sid": "AllowCreatingApplicationMetricAlarms",
+      "Effect": "Allow",
+      "Action": ["cloudwatch:*"],
+      "Resource": "arn:aws:cloudwatch:us-west-2:123456789012:alarm:salesforce-integration-*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords",
+        "xray:GetSamplingRules",
+        "xray:GetSamplingTargets"
+      ],
+      "Resource": ["*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["states:*"],
+      "Resource": "arn:aws:states:us-west-2:123456789012:stateMachine:salesforce-integration-*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["dynamodb:*"],
+      "Resource": "arn:aws:dynamodb:us-west-2:123456789012:table/salesforce-integration-*"
+    }
+  ]
+}

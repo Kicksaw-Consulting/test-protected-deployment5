@@ -1,0 +1,32 @@
+# Auto-detect text files and perform LF normalization
+* text=auto
+
+# Treat these as text files with linefeed endings
+*.css text diff=css eol=lf
+*.html text diff=html eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.py text diff=python eol=lf
+*.json text eol=lf
+*.md text diff=markdown eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+poetry.lock text eol=lf
+*.xml text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.ico binary
+*.svg binary
+*.gif binary
+
+# Don't count these files in statistics on GitHub
+package-lock.json linguist-vendored
+poetry.lock linguist-vendored
+
+# Exclude files from archives
+.gitignore export-ignore
+.gitattributes export-ignore

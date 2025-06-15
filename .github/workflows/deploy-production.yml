@@ -1,0 +1,68 @@
+name: Deploy to production
+
+on:
+  workflow_dispatch:
+  release:
+    types:
+      - "created"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+  deploy-production:
+    name: Deploy to production
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    env:
+      SENTRY_DSN: "null"
+      ENVIRONMENT: production
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Cache poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          key: poetry-${{ hashFiles('poetry.lock') }}
+          path: |
+            ~/.local/bin/poetry
+            ~/.local/share/pypoetry
+            ~/.cache/pypoetry
+      - name: Install poetry
+        if: ${{ steps.cache-poetry.outputs.cache-hit != 'true' }}
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install poetry export plugin
+        run: poetry self add poetry-plugin-export
+      - name: Install project and its dependencies
+        run: |
+          export PATH="~/.local/share/pypoetry/bin:$PATH"
+          poetry install
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/salesforce-integration-deployment-role
+      - name: Deploy
+        run: scripts/deploy.sh
+      - name: Run post-deployment script
+        run: poetry run python scripts/deployment/post_deploy.py

@@ -1,0 +1,26 @@
+# IDE
+.vscode/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Development environment
+.venv/
+node_modules/
+*.env
+
+# Coverage artifacts
+.coverage
+coverage.xml
+htmlcov/
+
+# Development artifacts
+cdk.out
+cdk-outputs.json

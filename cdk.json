@@ -1,0 +1,6 @@
+{
+  "app": "poetry run python app.py",
+  "context": {
+    "@aws-cdk/core:bootstrapQualifier": "61c44a6a3"
+  }
+}
