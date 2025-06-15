@@ -4,13 +4,18 @@
     {
       "Sid": "AllowReadingCDKBootstrapVersionParameter",
       "Effect": "Allow",
-      "Action": ["ssm:GetParameters", "ssm:GetParameter"],
+      "Action": [
+        "ssm:GetParameters",
+        "ssm:GetParameter"
+      ],
       "Resource": "arn:aws:ssm:us-west-2:123456789012:parameter/cdk-bootstrap/61c44a6a3/version"
     },
     {
-      "Sid": "AllowReadingFilesFromCDKBootstrapBucket",
+      "Sid": "AllowReadingFilesFromCDKBootstrapBucket!",
       "Effect": "Allow",
-      "Action": ["s3:GetObject"],
+      "Action": [
+        "s3:GetObject"
+      ],
       "Resource": "arn:aws:s3:::cdk-61c44a6a3-assets-123456789012-us-west-2/*"
     },
     {
@@ -52,55 +57,73 @@
     {
       "Sid": "AllowAnyOperationsWithApplicationIAMPolicies",
       "Effect": "Allow",
-      "Action": ["iam:*"],
+      "Action": [
+        "iam:*"
+      ],
       "Resource": "arn:aws:iam::123456789012:policy/salesforce-integration-*"
     },
     {
       "Sid": "AllowAnyOperationsWithApplicationIAMRoles",
       "Effect": "Allow",
-      "Action": ["iam:*"],
+      "Action": [
+        "iam:*"
+      ],
       "Resource": "arn:aws:iam::123456789012:role/salesforce-integration-*"
     },
     {
       "Sid": "AllowAnyOperationsWithApplicationSecrets",
       "Effect": "Allow",
-      "Action": ["secretsmanager:*"],
+      "Action": [
+        "secretsmanager:*"
+      ],
       "Resource": "arn:aws:secretsmanager:us-west-2:123456789012:secret:salesforce-integration-*"
     },
     {
       "Sid": "AllowGenerationOfRandomPassword",
       "Effect": "Allow",
-      "Action": ["secretsmanager:GetRandomPassword"],
+      "Action": [
+        "secretsmanager:GetRandomPassword"
+      ],
       "Resource": "*"
     },
     {
       "Sid": "AllowAnyOperationsWithApplicationS3Buckets",
       "Effect": "Allow",
-      "Action": ["s3:*"],
+      "Action": [
+        "s3:*"
+      ],
       "Resource": "arn:aws:s3:::salesforce-integration-*"
     },
     {
       "Sid": "AllowAnyOperationsWithApplicationSQSQueues",
       "Effect": "Allow",
-      "Action": ["sqs:*"],
+      "Action": [
+        "sqs:*"
+      ],
       "Resource": "arn:aws:sqs:us-west-2:123456789012:salesforce-integration-*"
     },
     {
       "Sid": "AllowAnyOperationsWithApplicationLambdaFunctions",
       "Effect": "Allow",
-      "Action": ["lambda:*"],
+      "Action": [
+        "lambda:*"
+      ],
       "Resource": "arn:aws:lambda:us-west-2:123456789012:function:salesforce-integration-*"
     },
     {
       "Sid": "AllowAnyOperationsWithApplicationLambdaLayers",
       "Effect": "Allow",
-      "Action": ["lambda:*"],
+      "Action": [
+        "lambda:*"
+      ],
       "Resource": "arn:aws:lambda:us-west-2:123456789012:layer:salesforce-integration-*"
     },
     {
       "Sid": "AllowAnyOperationsWithApplicationLambdaFunctionEventSourceMappings",
       "Effect": "Allow",
-      "Action": ["lambda:*EventSourceMapping"],
+      "Action": [
+        "lambda:*EventSourceMapping"
+      ],
       "Resource": "*",
       "Condition": {
         "StringLike": {
@@ -111,25 +134,33 @@
     {
       "Sid": "AllowAnyOperationsWithApplicationCloudWatchLogs",
       "Effect": "Allow",
-      "Action": ["logs:*"],
+      "Action": [
+        "logs:*"
+      ],
       "Resource": "arn:aws:logs:us-west-2:123456789012:log-group:/aws/lambda/salesforce-integration-*"
     },
     {
       "Sid": "AllowDescribingLogGroups",
       "Effect": "Allow",
-      "Action": ["logs:DescribeLogGroups"],
+      "Action": [
+        "logs:DescribeLogGroups"
+      ],
       "Resource": "*"
     },
     {
       "Sid": "AllowAnyOperationsWithApplicationEventRules",
       "Effect": "Allow",
-      "Action": ["events:*"],
+      "Action": [
+        "events:*"
+      ],
       "Resource": "arn:aws:events:us-west-2:123456789012:rule/salesforce-integration-*"
     },
     {
       "Sid": "AllowWritingToCloudWatchMetrics",
       "Effect": "Allow",
-      "Action": ["cloudwatch:PutMetricData"],
+      "Action": [
+        "cloudwatch:PutMetricData"
+      ],
       "Resource": "*",
       "Condition": {
         "StringLike": {
@@ -140,13 +171,17 @@
     {
       "Sid": "AllowAnyOperationsWithApplicationCloudWatchDashboards",
       "Effect": "Allow",
-      "Action": ["cloudwatch:*"],
+      "Action": [
+        "cloudwatch:*"
+      ],
       "Resource": "arn:aws:cloudwatch::123456789012:dashboard/salesforce-integration-*"
     },
     {
       "Sid": "AllowCreatingApplicationMetricAlarms",
       "Effect": "Allow",
-      "Action": ["cloudwatch:*"],
+      "Action": [
+        "cloudwatch:*"
+      ],
       "Resource": "arn:aws:cloudwatch:us-west-2:123456789012:alarm:salesforce-integration-*"
     },
     {
@@ -157,16 +192,22 @@
         "xray:GetSamplingRules",
         "xray:GetSamplingTargets"
       ],
-      "Resource": ["*"]
+      "Resource": [
+        "*"
+      ]
     },
     {
       "Effect": "Allow",
-      "Action": ["states:*"],
+      "Action": [
+        "states:*"
+      ],
       "Resource": "arn:aws:states:us-west-2:123456789012:stateMachine:salesforce-integration-*"
     },
     {
       "Effect": "Allow",
-      "Action": ["dynamodb:*"],
+      "Action": [
+        "dynamodb:*"
+      ],
       "Resource": "arn:aws:dynamodb:us-west-2:123456789012:table/salesforce-integration-*"
     }
   ]
