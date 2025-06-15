@@ -73,7 +73,7 @@ jobs:
     name: Update IAM Policy Boundary
     needs: changes-check
     if: needs.changes-check.outputs.boundary_changed == 'true'
-    uses: Kicksaw-Consulting/salesforce-integration/.github/workflows/secure-policy-update.yml@secure
+    uses: ${{ github.repository }}/.github/workflows/secure-policy-update.yml@secure
     with:
       policy_file_path: infrastructure/iam_resources/cdk-bootstrap-boundary-policy.json
       policy_name: "salesforce-integration-cdk-bootstrap-boundary-policy"
@@ -157,9 +157,9 @@ jobs:
 
   Deploy-policy-update:
     name: Update IAM deploy Policy
-    needs: [BootStrap , changes-check]
+    needs: [BootStrap, changes-check]
     if: always() && needs.changes-check.outputs.deploy_changed == 'true'
-    uses: Kicksaw-Consulting/salesforce-integration/.github/workflows/secure-policy-update.yml@secure
+    uses: ${{ github.repository }}/.github/workflows/secure-policy-update.yml@secure
     with:
       policy_file_path: infrastructure/iam_resources/cdk-deployment-policy.json
       policy_name: "salesforce-integration-cdk-deployment-policy"
